@@ -56,7 +56,7 @@
 #![allow(deprecated)]
 #![deny(missing_docs)]
 
-use std::collections::HashMap;
+use rustc_hash::FxHashMap;
 use std::env;
 use std::ffi::{OsStr, OsString};
 use std::fmt::{self, Display};
@@ -95,7 +95,7 @@ pub struct Build {
     objects: Vec<PathBuf>,
     flags: Vec<String>,
     flags_supported: Vec<String>,
-    known_flag_support_status: Arc<Mutex<HashMap<String, bool>>>,
+    known_flag_support_status: Arc<Mutex<FxHashMap<String, bool>>>,
     ar_flags: Vec<String>,
     no_default_flags: bool,
     files: Vec<PathBuf>,
@@ -122,8 +122,8 @@ pub struct Build {
     warnings_into_errors: bool,
     warnings: Option<bool>,
     extra_warnings: Option<bool>,
-    env_cache: Arc<Mutex<HashMap<String, Option<String>>>>,
-    apple_sdk_root_cache: Arc<Mutex<HashMap<String, OsString>>>,
+    env_cache: Arc<Mutex<FxHashMap<String, Option<String>>>>,
+    apple_sdk_root_cache: Arc<Mutex<FxHashMap<String, OsString>>>,
 }
 
 /// Represents the types of errors that may occur while using cc-rs.
@@ -166,7 +166,7 @@ impl From<io::Error> for Error {
 }
 
 impl Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}: {}", self.kind, self.message)
     }
 }
@@ -289,7 +289,7 @@ impl Build {
             objects: Vec::new(),
             flags: Vec::new(),
             flags_supported: Vec::new(),
-            known_flag_support_status: Arc::new(Mutex::new(HashMap::new())),
+            known_flag_support_status: Arc::new(Mutex::new(FxHashMap::default())),
             ar_flags: Vec::new(),
             no_default_flags: false,
             files: Vec::new(),
@@ -316,8 +316,8 @@ impl Build {
             warnings: None,
             extra_warnings: None,
             warnings_into_errors: false,
-            env_cache: Arc::new(Mutex::new(HashMap::new())),
-            apple_sdk_root_cache: Arc::new(Mutex::new(HashMap::new())),
+            env_cache: Arc::new(Mutex::new(FxHashMap::default())),
+            apple_sdk_root_cache: Arc::new(Mutex::new(FxHashMap::default())),
         }
     }
 
@@ -1625,7 +1625,7 @@ impl Build {
 
                 // armv7 targets get to use armv7 instructions
                 if (target.starts_with("armv7") || target.starts_with("thumbv7"))
-                    && target.contains("-linux-")
+                    && (target.contains("-linux-") || target.contains("-l4re-"))
                 {
                     cmd.args.push("-march=armv7-a".into());
                 }
@@ -2478,6 +2478,7 @@ impl Build {
             "armv6-unknown-netbsd-eabihf" => Some("armv6--netbsdelf-eabihf"),
             "armv7-unknown-linux-gnueabi" => Some("arm-linux-gnueabi"),
             "armv7-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
+            "armv7-unknown-l4re-uclibceabihf" => Some("arm-linux-gnueabihf"),
             "armv7-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
             "armv7neon-unknown-linux-gnueabihf" => Some("arm-linux-gnueabihf"),
             "armv7neon-unknown-linux-musleabihf" => Some("arm-linux-musleabihf"),
