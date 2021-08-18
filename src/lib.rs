@@ -1625,9 +1625,18 @@ impl Build {
 
                 // armv7 targets get to use armv7 instructions
                 if (target.starts_with("armv7") || target.starts_with("thumbv7"))
-                    && (target.contains("-linux-") || target.contains("-l4re-"))
+                    && target.contains("-linux-")
                 {
                     cmd.args.push("-march=armv7-a".into());
+                }
+
+                // For l4re variant
+                if target.starts_with("armv7") && target.contains("-l4re-")
+                {
+                    cmd.args.push("-march=armv7-a".into());
+                    if target.ends_with("hf") {
+                        cmd.args.push("-mfpu=vfpv3-d16".into());
+                    }
                 }
 
                 // (x86 Android doesn't say "eabi")
